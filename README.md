@@ -1,6 +1,6 @@
 # React-Websocket
 
-after cloning the application
+after cloning the application.
 
 cd React-Websocket
 
