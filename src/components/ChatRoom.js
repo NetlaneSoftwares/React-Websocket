@@ -1,33 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import { over } from 'stompjs';
-import SockJS from 'sockjs-client';
+import React, { useEffect, useState } from "react";
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
+import webstomp from "webstomp-client";
+
 
 var stompClient = null;
 const ChatRoom = () => {
   const [privateChats, setPrivateChats] = useState(new Map());
   const [publicChats, setPublicChats] = useState([]);
-  const [tab, setTab] = useState('CHATROOM');
+  const [tab, setTab] = useState("CHATROOM");
   const [userData, setUserData] = useState({
-    username: '',
-    receivername: '',
+    username: "",
+    receivername: "",
     connected: false,
-    message: '',
+    message: "",
   });
+  
+  
+    const token =  "Bearer eyJhbGciOiJIUzI1NiJ9.eyJjb21wYW55X21jIjoiNjc3MDQ2IiwidXNlcl9lbWFpbCI6InRlc3RlckBnbWFpbC5jb20iLCJjb21wYW55X3BoIjpudWxsLCJjb21wYW55X2ZheCI6IjMwOS0yMDUtNjc0NCIsImNvbXBhbnlfZG90IjoiMzI4MzAxIiwiZnVsbF9uYW1lIjoiRGV2ZWxvcGVyIFRlc3QiLCJ1c2VyX3R5cGUiOiJTVVBFUiIsInVzZXJfaWQiOjIzLCJ1c2VyX3BoIjoiNDMyNDU0MjMyMyIsImNvbXBhbnlfbmFtZSI6IlNJUCBMb2dpc3RpY3MgSW5jIiwiY29tcGFueSI6MjgsImV4cCI6MTY1MTYyMjYyMCwiaWF0IjoxNjUxNTM2MjIwLCJlbWFpbCI6InRlc3RlckBnbWFpbC5jb20ifQ.PwTnSXxco35SWP4r8szjUJ5Y_V7rtx6n9SOPvqyD-Kk";
+
+ 
+ 
   useEffect(() => {
     console.log(userData);
   }, [userData]);
 
   const connect = () => {
-    let Sock = new SockJS('http://localhost:8081/app');
-    stompClient = over(Sock);
-    stompClient.connect({}, onConnected, onError);
+    let Sock = new SockJS(
+      `http://localhost:8080/tms-message-channel?Authorization=${token}`
+    );
+    stompClient = webstomp.over(
+      Sock,
+      { debug: false },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+   
+    stompClient.connect(
+      { headers: { Authorization: `Bearer ${token}` } },
+      onConnected,
+      onError
+    );
   };
 
   const onConnected = () => {
     setUserData({ ...userData, connected: true });
-    stompClient.subscribe('/chatroom/public', onMessageReceived);
+    stompClient.subscribe("/chatroom/public", onMessageReceived);
+
     stompClient.subscribe(
-      '/user/' + userData.username + '/private',
+      "/user/" + userData.username + "/private",
       onPrivateMessage
     );
     userJoin();
@@ -36,21 +56,24 @@ const ChatRoom = () => {
   const userJoin = () => {
     var chatMessage = {
       senderName: userData.username,
-      status: 'JOIN',
+      status: "JOIN",
     };
-    stompClient.send('/app/message', {}, JSON.stringify(chatMessage));
+    stompClient.send(
+      "/tms-message-channel/message",
+      JSON.stringify(chatMessage)
+    );
   };
 
   const onMessageReceived = (payload) => {
     var payloadData = JSON.parse(payload.body);
     switch (payloadData.status) {
-      case 'JOIN':
+      case "JOIN":
         if (!privateChats.get(payloadData.senderName)) {
           privateChats.set(payloadData.senderName, []);
           setPrivateChats(new Map(privateChats));
         }
         break;
-      case 'MESSAGE':
+      case "MESSAGE":
         publicChats.push(payloadData);
         setPublicChats([...publicChats]);
         break;
@@ -59,6 +82,7 @@ const ChatRoom = () => {
 
   const onPrivateMessage = (payload) => {
     console.log(payload);
+    console.log("payload");
     var payloadData = JSON.parse(payload.body);
     if (privateChats.get(payloadData.senderName)) {
       privateChats.get(payloadData.senderName).push(payloadData);
@@ -84,29 +108,48 @@ const ChatRoom = () => {
       var chatMessage = {
         senderName: userData.username,
         message: userData.message,
-        status: 'MESSAGE',
+        status: "MESSAGE",
       };
       console.log(chatMessage);
-      stompClient.send('/app/message', {}, JSON.stringify(chatMessage));
-      setUserData({ ...userData, message: '' });
+      stompClient.send(
+        "/tms-message-channel/message",
+        JSON.stringify(chatMessage)
+      );
+      setUserData({ ...userData, message: "" });
     }
   };
 
   const sendPrivateValue = () => {
     if (stompClient) {
       var chatMessage = {
-        senderName: userData.username,
-        receiverName: tab,
-        message: userData.message,
-        status: 'MESSAGE',
+        body: userData.message,
+        title: "private message",
+        subject: "provateMessage",
+        recipient: {
+          id: 25,
+          email_address: "tester@gmail.com",
+        },
+        sender: {
+          id: 36,
+          email_address: "tester@gmail.com",
+        },
+        read_status: false,
+        conversation: {
+          id: null,
+        },
       };
-
+      console.log(chatMessage);
       if (userData.username !== tab) {
         privateChats.get(tab).push(chatMessage);
         setPrivateChats(new Map(privateChats));
       }
-      stompClient.send('/app/private-message', {}, JSON.stringify(chatMessage));
-      setUserData({ ...userData, message: '' });
+      stompClient.send(
+        "/tms-message-channel/private-message",
+   
+  
+        JSON.stringify(chatMessage)
+      );
+      setUserData({ ...userData, message: "" });
     }
   };
 
@@ -126,9 +169,9 @@ const ChatRoom = () => {
             <ul>
               <li
                 onClick={() => {
-                  setTab('CHATROOM');
+                  setTab("CHATROOM");
                 }}
-                className={`member ${tab === 'CHATROOM' && 'active'}`}
+                className={`member ${tab === "CHATROOM" && "active"}`}
               >
                 Chatroom
               </li>
@@ -137,7 +180,7 @@ const ChatRoom = () => {
                   onClick={() => {
                     setTab(name);
                   }}
-                  className={`member ${tab === name && 'active'}`}
+                  className={`member ${tab === name && "active"}`}
                   key={index}
                 >
                   {name}
@@ -145,13 +188,13 @@ const ChatRoom = () => {
               ))}
             </ul>
           </div>
-          {tab === 'CHATROOM' && (
+          {tab === "CHATROOM" && (
             <div className="chat-content">
               <ul className="chat-messages">
                 {publicChats.map((chat, index) => (
                   <li
                     className={`message ${
-                      chat.senderName === userData.username && 'self'
+                      chat.senderName === userData.username && "self"
                     }`}
                     key={index}
                   >
@@ -184,13 +227,13 @@ const ChatRoom = () => {
               </div>
             </div>
           )}
-          {tab !== 'CHATROOM' && (
+          {tab !== "CHATROOM" && (
             <div className="chat-content">
               <ul className="chat-messages">
                 {[...privateChats.get(tab)].map((chat, index) => (
                   <li
                     className={`message ${
-                      chat.senderName === userData.username && 'self'
+                      chat.senderName === userData.username && "self"
                     }`}
                     key={index}
                   >
