@@ -14,7 +14,7 @@ const ChatRoom = () => {
     message: '',
     id: 2,
   });
-  // you wil get it from localstorage
+  // you wil get it from localstorage.
   const token =
     "Bearer eyJhbGciOiJIUzI1NiJ9.eyJjb21wYW55X21jIjoiNjc3MDQ3IiwidXNlcl9lbWFpbCI6InRlc3RlckBnbWFpbC5jb20iLCJjb21wYW55X3BoIjpudWxsLCJjb21wYW55X2ZheCI6IjMwOS0yMDUtNjc0NCIsImNvbXBhbnlfZG90IjoiMzI4MzAxIiwiZnVsbF9uYW1lIjoiRGV2ZWxvcGVyIFRlc3QiLCJ1c2VyX3R5cGUiOiJTVVBFUiIsInVzZXJfaWQiOjIsInVzZXJfcGgiOiI0MzI0NTQyMzI2IiwiY29tcGFueV9uYW1lIjoiU0lQIExvZ2lzdGljcyBJbmMiLCJjb21wYW55IjoyLCJleHAiOjE2NTIyOTgyMTUsImlhdCI6MTY1MjIxMTgxNSwiZW1haWwiOiJ0ZXN0ZXJAZ21haWwuY29tIn0.SdJXrCR27pPvkfArUGKs0OZD7GnW8qK76HqzL5_CtKc";
 
