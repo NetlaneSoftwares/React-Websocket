@@ -33,7 +33,7 @@ const ChatRoom = () => {
     stompClient.subscribe('/chatroom/public', onMessageReceived);
     
     stompClient.subscribe(
-      '/user/'+ userData.username+'/private',
+      '/user/'+ userData.id+'/private',
       onPrivateMessage
     );
     userJoin();
@@ -41,7 +41,7 @@ const ChatRoom = () => {
 
   const userJoin = () => {
     var chatMessage = {
-      senderName: userData.username,
+      senderName: userData.id,
       status: 'JOIN',
     };
     stompClient.send('/tms-message-channel/message', {}, JSON.stringify(chatMessage));
